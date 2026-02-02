@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { PlusCircle } from "lucide-react"
+import { NewInstallmentModal } from "@/components/modals/new-installment-modal"
+import { NewServiceModal } from "@/components/modals/new-service-modal"
+import { NewLoanModal } from "@/components/modals/new-loan-modal"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -14,6 +17,18 @@ export default async function DashboardPage() {
     if (!user) {
         redirect("/login")
     }
+
+    // Fetch services
+    const { data: services } = await supabase
+        .from("services")
+        .select("*")
+        .eq("user_id", user.id)
+
+    let servicesTotal = 0
+    services?.forEach((svc) => {
+        // Services are monthly by default for now
+        servicesTotal += svc.amount
+    })
 
     // Fetch installments
     const { data: installments } = await supabase
@@ -44,7 +59,6 @@ export default async function DashboardPage() {
         }
     })
 
-    const servicesTotal = 0
     const monthlyTotal = installmentsTotal + servicesTotal
 
     return (
@@ -92,19 +106,10 @@ export default async function DashboardPage() {
                     </Card>
                 </div>
 
-                <div className="flex gap-4">
-                    <Button asChild>
-                        <Link href="/dashboard/installments/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nueva Compra en Cuotas
-                        </Link>
-                    </Button>
-                    <Button asChild variant="secondary">
-                        <Link href="/dashboard/services/new">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Nuevo Servicio
-                        </Link>
-                    </Button>
+                <div className="flex gap-4 flex-wrap">
+                    <NewInstallmentModal />
+                    <NewServiceModal />
+                    <NewLoanModal />
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">

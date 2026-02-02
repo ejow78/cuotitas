@@ -2,7 +2,6 @@
 
 import { createClient } from "@/utils/supabase/server"
 import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
 
 export async function addInstallment(formData: FormData) {
     const supabase = await createClient()
@@ -12,13 +11,21 @@ export async function addInstallment(formData: FormData) {
     const totalInstallments = parseInt(formData.get("total_installments") as string)
     const startDate = formData.get("start_date") as string
 
-    // Calculate installment amount (simple division for now)
-    const installmentAmount = totalAmount / totalInstallments
+    // Check for custom installment amount FIRST
+    const customAmountRaw = formData.get("custom_installment_amount") as string
+    let installmentAmount = 0
+
+    if (customAmountRaw && customAmountRaw.trim() !== "") {
+        installmentAmount = parseFloat(customAmountRaw)
+    } else {
+        // Fallback to calculation
+        installmentAmount = totalAmount / totalInstallments
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        redirect("/login")
+        return { error: "User not authenticated" }
     }
 
     const { error } = await supabase.from("installments").insert({
@@ -32,11 +39,9 @@ export async function addInstallment(formData: FormData) {
 
     if (error) {
         console.error("Error adding installment:", error)
-        // Handle error (e.g., return to form with error)
-        // return { error: "Failed to add installment" }
-        return
+        return { error: "Failed to add installment" }
     }
 
     revalidatePath("/dashboard")
-    redirect("/dashboard")
+    return { success: true }
 }
