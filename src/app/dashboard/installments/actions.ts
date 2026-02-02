@@ -33,7 +33,8 @@ export async function addInstallment(formData: FormData) {
     if (error) {
         console.error("Error adding installment:", error)
         // Handle error (e.g., return to form with error)
-        return { error: "Failed to add installment" }
+        // return { error: "Failed to add installment" }
+        return
     }
 
     revalidatePath("/dashboard")
